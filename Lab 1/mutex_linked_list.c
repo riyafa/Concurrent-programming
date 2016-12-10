@@ -1,7 +1,30 @@
+//
+// Created by malith on 12/10/16.
+//
+/* File:     linked_list_serial.c
+ *
+ * Purpose:  Implement a serial sorted linked list of
+ *           ints with ops insert, print, member, delete, free list.
+ *           This version uses mutex locks
+ *
+ * Compile:  gcc -g -Wall -std=gnu99 mutex_linked_list.c -o mutex_linked_list -lpthread -lm
+ * Usage:    ./mutex_linked_list 
+ * Input:    total number of samples
+ *           total number of keys inserted by main thread
+ *           total number of operations
+ *           percent of operations that are search, insert (remainder are delete)
+ * Output:   Elapsed time to carry out the operations for each sample
+ *           The average and standard deviation of the times for the given number of samples
+ *
+ * Notes:
+ *    1.  Repeated values are not allowed in the list
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
 #include <time.h>
+#include <sys/time.h>
 #include <math.h>
 
 int MAX_NUMBER = 65535;
@@ -17,10 +40,13 @@ double delete_fraction = 0.10;
 struct node** head_node;
 
 pthread_mutex_t list_mutex;
+pthread_mutex_t count_mutex;
 
 int max_member_number=0;
 int max_insert_number=0;
 int max_delete_number=0;
+
+int member_count = 0, insert_count = 0, delete_count = 0;
 
 struct node {
   int data;
@@ -105,44 +131,47 @@ void Populate_list(int seed, struct node** head, int n){
 }
 
 void* Thread_operation(void* rank){
-    /* Define local limits for the threads */
-    int thread_max_member_number = max_member_number/thread_count;
-    int thread_max_insert_number = max_insert_number/thread_count;
-    int thread_max_delete_number = max_delete_number/thread_count;
-    int thread_member_number=0;
-    int thread_insert_number=0;
-    int thread_delete_number=0;
-    srand(seed);
-    int operation;
-    int random_number;
-
-    while(thread_member_number<thread_max_member_number || thread_insert_number<thread_max_insert_number || thread_delete_number<thread_max_delete_number){
-        random_number = rand() % (MAX_NUMBER+1);
-        operation = random_number % 3;   //Choose the operation randomly
-
-        if(operation==0 && thread_member_number < thread_max_member_number){
-                thread_member_number++;
-                pthread_mutex_lock(&list_mutex);
-                Member(random_number, *head_node);
-                pthread_mutex_unlock(&list_mutex);
+    long my_rank = (long) rank;
+    unsigned int seedp = seed + my_rank;
+    int i, val;
+    int my_member_count = 0, my_insert_count = 0, my_delete_count = 0;
+    int ops_per_thread = max_m_operations / thread_count;
+    int thread_max_member_number = max_member_number / thread_count;
+    int thread_max_insert_number = max_insert_number / thread_count;
+    int thread_max_delete_number = max_delete_number / thread_count;
+    for (i = 0; i < ops_per_thread; i++) {
+        val = rand_r(&seedp) % MAX_NUMBER;
+        if (my_member_count < thread_max_member_number) {
+            pthread_mutex_lock(&list_mutex);
+            Member(val, *head_node);
+            pthread_mutex_unlock(&list_mutex);
+            my_member_count++;
+        } else if (my_insert_count < thread_max_insert_number) {
+            pthread_mutex_lock(&list_mutex);
+            Insert(val, head_node);
+            pthread_mutex_unlock(&list_mutex);
+            my_insert_count++;
+        } else if(my_delete_count < thread_max_delete_number) { /* delete */
+            pthread_mutex_lock(&list_mutex);
+            Delete(val, head_node);
+            pthread_mutex_unlock(&list_mutex);
+            my_delete_count++;
         }
-        else if(operation==1 && thread_insert_number < thread_max_insert_number){
-                thread_insert_number++;
-                pthread_mutex_lock(&list_mutex);
-                Insert(random_number, head_node);
-                pthread_mutex_unlock(&list_mutex);
-        }
-        else if(operation==2 && thread_delete_number < thread_max_delete_number){
-                thread_delete_number++;
-                pthread_mutex_lock(&list_mutex);
-                Delete(random_number, head_node);
-                pthread_mutex_unlock(&list_mutex);
-        }
-
     }
+
+    pthread_mutex_lock(&count_mutex);
+    member_count += my_member_count;
+    insert_count += my_insert_count;
+    delete_count += my_delete_count;
+    pthread_mutex_unlock(&count_mutex);
     return NULL;
 }
 
+double getCurrentTime() {
+    struct timeval te;
+    gettimeofday(&te, NULL);
+    return te.tv_sec + te.tv_usec / 1000000.0;
+}
 
 int main()
 {
@@ -150,6 +179,7 @@ int main()
 
     //initialize mutex
     pthread_mutex_init(&list_mutex, NULL);
+    pthread_mutex_init(&count_mutex, NULL);
 
     int iterations=0;
     initial_length=1000;
@@ -182,7 +212,7 @@ int main()
         max_insert_number = (int)max_m_operations*insert_fraction;
         max_delete_number = (int)max_m_operations*delete_fraction;
 
-        clock_t begin = clock();
+        double begin = getCurrentTime();
 
         pthread_t threads[thread_count];
         long thread;
@@ -194,8 +224,8 @@ int main()
             pthread_join(threads[thread],NULL);
         }
 
-        clock_t end = clock();
-        double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+        double end = getCurrentTime();
+        double time_spent = end - begin;
         timespent[seed-10]=time_spent;
         //printf("Seed: %d, Time taken: %f seconds",seed,time_spent);
         printf("Percentage Complete: %.0f %%",((seed-10)*100)/(float)iterations);
@@ -219,5 +249,7 @@ int main()
 
     printf("Average: %f, std_deviation: %f\n",average,std_deviation);
 
+    pthread_mutex_destroy(&list_mutex);
+    pthread_mutex_destroy(&count_mutex);
     return 0;
 }
