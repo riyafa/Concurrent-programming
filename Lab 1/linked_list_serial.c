@@ -200,6 +200,9 @@ int main() {
     double timespent[iterations];
     double sum = 0, sum_var = 0, average = 0, std_deviation = 0, variance = 0;
     for (int i = 0; i < iterations; i++) {
+        member_count = 0;
+        insert_count = 0;
+        delete_count = 0;
         printf("\n\n---------------Sample %d---------------\n", i + 1);
         timespent[i] = final_function(iterations, inserts_in_main);
         sum += timespent[i];
