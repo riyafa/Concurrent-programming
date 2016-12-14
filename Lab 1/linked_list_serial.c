@@ -7,10 +7,10 @@
  *           ints with ops insert, print, member, delete, free list.
  *           This version uses read-write locks
  *
- * Compile:  gcc -g -Wall pthread_linked_list_readwritelock.c -o pthread_linked_list_readwritelock -lpthread -lm
- * Usage:    ./pthread_linked_list_readwritelock
+ * Compile:  gcc -g -Wall linked_list_serial.c -o linked_list_serial -lm
+ * Usage:    ./linked_list_serial
  * Input:    total number of samples
- *           total number of keys inserted by main thread
+ *           total number of keys inserted to initiate the list
  *           total number of operations
  *           percent of operations that are search, insert (remainder are delete)
  * Output:   Elapsed time to carry out the operations for each sample
