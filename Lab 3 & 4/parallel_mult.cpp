@@ -29,7 +29,7 @@ int main() {
             mult[i][j] = 0;
         }
     }
-    double timespent[n];
+    double timespent[iterations];
     double start, finish, tDifference;
     // Multiplying matrix a and b and storing in array mult.
     for (int l = 0; l < iterations; l++) {
@@ -46,7 +46,7 @@ int main() {
         finish = omp_get_wtime();
         tDifference = finish - start;
         timespent[l] = tDifference;
-//        cout << "The time taken " << tDifference << endl;
+//       cout << "The time taken (" <<l <<")"<< tDifference << endl;
     }
     for (i = 0; i < n; i++) {
         delete[] a[i];

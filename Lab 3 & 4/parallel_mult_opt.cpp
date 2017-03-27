@@ -30,7 +30,7 @@ int main() {
         }
     }
     double temp, start, finish, tDifference;
-    double timespent[n];
+    double timespent[iterations];
     // Multiplying matrix a and b and storing in array mult.
     double aik;
     for (int l = 0; l < iterations; l++) {

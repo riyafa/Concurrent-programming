@@ -30,7 +30,7 @@ int main() {
         }
     }
     double start, finish, tDifference, sum;
-    double timespent[n];
+    double timespent[iterations];
     for (int l = 0; l < iterations; l++) {
         start = omp_get_wtime();
         // Multiplying matrix a and b and storing in array mult.
