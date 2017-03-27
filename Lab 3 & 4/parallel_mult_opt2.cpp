@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <omp.h>
 #include <math.h>
+
 using namespace std;
 
 int main() {
@@ -28,25 +29,24 @@ int main() {
             mult[i][j] = 0;
         }
     }
-    double temp;
+    double start, finish, tDifference, sum;
     double timespent[n];
     for (int l = 0; l < iterations; l++) {
-        double start = omp_get_wtime();
-    // Multiplying matrix a and b and storing in array mult.
-    double sum;
+        start = omp_get_wtime();
+        // Multiplying matrix a and b and storing in array mult.
 #pragma omp parallel for
-    for (i = 0; i < n; ++i) {
+        for (i = 0; i < n; ++i) {
 #pragma omp parallel for
-        for (j = 0; j < n; ++j) {
-            sum = 0;
-            for (k = 0; k < n; ++k) {
-                sum += a[i][k] * b[k][j];
+            for (j = 0; j < n; ++j) {
+                sum = 0;
+                for (k = 0; k < n; ++k) {
+                    sum += a[i][k] * b[k][j];
+                }
+                mult[i][j] = sum;
             }
-            mult[i][j] =sum;
         }
-    }
-    double finish = omp_get_wtime();
-    double tDifference = finish - start;
+        finish = omp_get_wtime();
+        tDifference = finish - start;
         timespent[l] = tDifference;
 //        cout << "The time taken " << tDifference << endl;
     }
@@ -59,7 +59,8 @@ int main() {
     delete[] b;
     delete[] mult;
     /** Calculate average and Std **/
-    double sum = 0, sum_var = 0, average = 0, std_deviation = 0, variance = 0;
+    double sum_var = 0, average = 0, std_deviation = 0, variance = 0;
+    sum = 0;
     for (int i = 0; i < iterations; i++) {
         sum += timespent[i];
     }

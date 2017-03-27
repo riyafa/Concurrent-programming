@@ -30,20 +30,21 @@ int main() {
         }
     }
     double timespent[n];
-    double start = omp_get_wtime();
+    double start, finish, tDifference;
     // Multiplying matrix a and b and storing in array mult.
     for (int l = 0; l < iterations; l++) {
+        start = omp_get_wtime();
 #pragma omp parallel for
-    for (i = 0; i < n; ++i) {
+        for (i = 0; i < n; ++i) {
 #pragma omp parallel for
-        for (j = 0; j < n; ++j) {
-            for (k = 0; k < n; ++k) {
-                mult[i][j] += a[i][k] * b[k][j];
+            for (j = 0; j < n; ++j) {
+                for (k = 0; k < n; ++k) {
+                    mult[i][j] += a[i][k] * b[k][j];
+                }
             }
         }
-    }
-    double finish = omp_get_wtime();
-    double tDifference = finish - start;
+        finish = omp_get_wtime();
+        tDifference = finish - start;
         timespent[l] = tDifference;
 //        cout << "The time taken " << tDifference << endl;
     }
