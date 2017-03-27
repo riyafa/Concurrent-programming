@@ -1,13 +1,16 @@
 #include <iostream>
 #include <stdlib.h>
 #include <omp.h>
+#include <math.h>
 
 using namespace std;
 
 int main() {
-    int n, i, j, k;
+    int n, i, j, k, iterations;
     cout << "Enter n: ";
     cin >> n;
+    cout << "Enter number of iterations: ";
+    cin >> iterations;
     double **a = new double *[n];
     a = new double *[n];
     double **b = new double *[n];
@@ -26,17 +29,24 @@ int main() {
             mult[i][j] = 0;
         }
     }
-    clock_t tStart = clock();
+    double timespent[n];
+    double start = omp_get_wtime();
     // Multiplying matrix a and b and storing in array mult.
+    for (int l = 0; l < iterations; l++) {
 #pragma omp parallel for
-    for (i = 0; i < n; ++i)
-        for (j = 0; j < n; ++j)
+    for (i = 0; i < n; ++i) {
+#pragma omp parallel for
+        for (j = 0; j < n; ++j) {
             for (k = 0; k < n; ++k) {
                 mult[i][j] += a[i][k] * b[k][j];
             }
-    clock_t tEnd = clock();
-    double tDifference = (double) (tEnd - tStart) / CLOCKS_PER_SEC;
-    cout << "The time taken " << tDifference << endl;
+        }
+    }
+    double finish = omp_get_wtime();
+    double tDifference = finish - start;
+        timespent[l] = tDifference;
+//        cout << "The time taken " << tDifference << endl;
+    }
     for (i = 0; i < n; i++) {
         delete[] a[i];
         delete[] b[i];
@@ -45,5 +55,18 @@ int main() {
     delete[] a;
     delete[] b;
     delete[] mult;
+    /** Calculate average and Std **/
+    double sum = 0, sum_var = 0, average = 0, std_deviation = 0, variance = 0;
+    for (int i = 0; i < iterations; i++) {
+        sum += timespent[i];
+    }
+    average = sum / (float) iterations;
+    /*  Compute  variance  and standard deviation  */
+    for (int i = 0; i < iterations; i++) {
+        sum_var = sum_var + pow((timespent[i] - average), 2);
+    }
+    variance = sum_var / (float) (iterations - 1);
+    std_deviation = sqrt(variance);
+    cout << "Average: " << average << " Standard deviation: " << std_deviation << endl;
     return 0;
 }

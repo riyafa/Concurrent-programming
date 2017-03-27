@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <omp.h>
 #include <math.h>
-
 using namespace std;
 
 int main() {
@@ -31,22 +30,23 @@ int main() {
     }
     double temp;
     double timespent[n];
-    double start = omp_get_wtime();
-    // Multiplying matrix a and b and storing in array mult.
-    double aik;
     for (int l = 0; l < iterations; l++) {
+        double start = omp_get_wtime();
+    // Multiplying matrix a and b and storing in array mult.
+    double sum;
 #pragma omp parallel for
-        for (i = 0; i < n; ++i) {
+    for (i = 0; i < n; ++i) {
 #pragma omp parallel for
+        for (j = 0; j < n; ++j) {
+            sum = 0;
             for (k = 0; k < n; ++k) {
-                aik = a[i][k];
-                for (j = 0; j < n; ++j) {
-                    mult[i][j] += aik * b[k][j];
-                }
+                sum += a[i][k] * b[k][j];
             }
+            mult[i][j] =sum;
         }
-        double finish = omp_get_wtime();
-        double tDifference = finish - start;
+    }
+    double finish = omp_get_wtime();
+    double tDifference = finish - start;
         timespent[l] = tDifference;
 //        cout << "The time taken " << tDifference << endl;
     }
